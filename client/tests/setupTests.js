@@ -48,17 +48,28 @@ beforeAll(async () => {
 
   window.localStorage.setItem('token', registrationPayload.token);
 
-  const seedPerkResponse = await api.post('/perks', {
-    title: 'Integration Preview Benefit',
-    description: 'Baseline record created during setup for deterministic rendering checks.',
-    category: 'travel',
-    merchant: 'Integration Merchant',
-    discountPercent: 15
-  });
-
-  const seededPerk = seedPerkResponse.data.perk;
-  if (seededPerk?._id) {
-    createdPerkIds.add(seededPerk._id);
+  let seededPerk;
+  try {
+    const seedPerkResponse = await api.post('/perks', {
+      title: 'Integration Preview Benefit',
+      description: 'Baseline record created during setup for deterministic rendering checks.',
+      category: 'travel',
+      merchant: 'Integration Merchant',
+      discountPercent: 15
+    });
+    seededPerk = seedPerkResponse.data.perk;
+    if (seededPerk?._id) createdPerkIds.add(seededPerk._id);
+  } catch (err) {
+    // If a duplicate exists (409) try to locate it instead of failing the whole suite
+    const status = err?.response?.status;
+    if (status === 409) {
+      const found = await api.get('/perks/all', { params: { search: 'Integration Preview Benefit' } });
+      const foundList = found.data.perks || [];
+      seededPerk = foundList[0];
+      if (seededPerk?._id) createdPerkIds.add(seededPerk._id);
+    } else {
+      throw err;
+    }
   }
 
   global.__TEST_CONTEXT__ = {

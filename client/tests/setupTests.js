@@ -63,9 +63,17 @@ beforeAll(async () => {
     // If a duplicate exists (409) try to locate it instead of failing the whole suite
     const status = err?.response?.status;
     if (status === 409) {
-      const found = await api.get('/perks/all', { params: { search: 'Integration Preview Benefit' } });
-      const foundList = found.data.perks || [];
-      seededPerk = foundList[0];
+      // Rather than accepting an existing (possibly other-user) perk, create a
+      // unique perk for this test run to ensure it is owned by the test user.
+      const uniqueTitle = `Integration Preview Benefit ${crypto.randomUUID()}`;
+      const retry = await api.post('/perks', {
+        title: uniqueTitle,
+        description: 'Baseline record created during setup for deterministic rendering checks.',
+        category: 'travel',
+        merchant: 'Integration Merchant',
+        discountPercent: 15
+      });
+      seededPerk = retry.data.perk;
       if (seededPerk?._id) createdPerkIds.add(seededPerk._id);
     } else {
       throw err;

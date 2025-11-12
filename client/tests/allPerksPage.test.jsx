@@ -30,6 +30,12 @@ describe('AllPerks page (Directory)', () => {
     // corresponds to the seeded record. This triggers the API search.
     const nameFilter = screen.getByPlaceholderText('Enter perk name...');
     fireEvent.change(nameFilter, { target: { value: seededPerk.title } });
+    // Wait for the search results to include the seeded perk
+
+    // Trigger an immediate search (tests shouldn't rely on the component's
+    // internal debounce). Clicking the submit button forces the request now.
+    const searchButton = screen.getByRole('button', { name: /search now/i });
+    fireEvent.click(searchButton);
 
     // Wait for the search results to include the seeded perk
     await waitFor(() => {
@@ -71,6 +77,10 @@ describe('AllPerks page (Directory)', () => {
 
     // Choose the seeded merchant
     fireEvent.change(merchantSelect, { target: { value: seededPerk.merchant } });
+
+    // Trigger the search immediately to bypass the component debounce.
+    const searchButton = screen.getByRole('button', { name: /search now/i });
+    fireEvent.click(searchButton);
 
     // Wait for the filtered result to appear
     await waitFor(() => {
